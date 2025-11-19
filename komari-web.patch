@@ -370,17 +370,18 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
                    className="flex flex-row gap-2 text-sm items-center"
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/src/pages/admin/index.tsx komari-all/komari-web/src/pages/admin/index.tsx
 --- code/komari-web/src/pages/admin/index.tsx	2025-11-19 15:24:53
-+++ komari-all/komari-web/src/pages/admin/index.tsx	2025-11-19 15:56:56
-@@ -265,29 +265,17 @@
++++ komari-all/komari-web/src/pages/admin/index.tsx	2025-11-19 16:11:17
+@@ -265,23 +265,13 @@
                </IconButton>
              </Text>
            )}
 -          {node.ipv6 && (
--            <Text
--              size="2"
--              className="flex items-center gap-1"
++          {node.wt0_ip && (
+             <Text
+               size="2"
+               className="flex items-center gap-1"
 -              title={node.ipv6}
--            >
+             >
 -              {node.ipv6.length > 20
 -                ? (() => {
 -                    const segments = node.ipv6.split(":");
@@ -392,26 +393,8 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
 -                  })()
 -                : node.ipv6}
 -              <IconButton variant="ghost" onClick={() => copy(node.ipv6)}>
-+            {node.wt0_ip && (
-+                <Text size="2" className="flex items-center gap-1">
-+                    {node.wt0_ip}
-+                    <IconButton variant="ghost" onClick={() => copy(node.wt0_ip)}>
-                         <Copy size="16" />
-                     </IconButton>
-                 </Text>
-             )}
-         </Flex>
-       </TableCell>
-+
-       <TableCell>{node.version}</TableCell>
-       <TableCell>
-         <Text
-@@ -636,7 +624,7 @@
-       scriptFile = "install.ps1";
-     }
-     let scriptUrl =
--      `https://raw.githubusercontent.com/komari-monitor/komari-agent/refs/heads/main/${scriptFile}`;
-+      `https://github.z4.cn/https://raw.githubusercontent.com/hanxianzhai/komari-agent/refs/heads/main/${scriptFile}`;
-     if (enableGhproxy) {
-       if (enableGhproxy && installOptions.ghproxy) {
-         scriptUrl = scriptUrl.slice(8); // 去掉 https://
++              {node.wt0_ip}
++              <IconButton variant="ghost" onClick={() => copy(node.wt0_ip)}>
+                 <Copy size="16" />
+               </IconButton>
+             </Text>
