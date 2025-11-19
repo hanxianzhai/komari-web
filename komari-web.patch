@@ -1,5 +1,5 @@
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/komari-theme.json komari-all/komari-web/komari-theme.json
---- code/komari-web/komari-theme.json	2025-11-19 15:07:44
+--- code/komari-web/komari-theme.json	2025-11-19 15:24:53
 +++ komari-all/komari-web/komari-theme.json	2025-11-19 15:08:50
 @@ -4,6 +4,6 @@
      "description": "Preview theme for Komari Monitor",
@@ -11,7 +11,7 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
  }
 \ No newline at end of file
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/package-lock.json komari-all/komari-web/package-lock.json
---- code/komari-web/package-lock.json	2025-11-19 15:07:44
+--- code/komari-web/package-lock.json	2025-11-19 15:24:53
 +++ komari-all/komari-web/package-lock.json	2025-11-19 15:08:50
 @@ -115,6 +115,7 @@
        "integrity": "sha512-IaaGWsQqfsQWVLqMn9OB92MNN7zukfVA4s7KKAI0KfrrDsZ0yhi5uV4baBuLuN7n3vsZpwP8asPPcVwApxvjBQ==",
@@ -192,7 +192,7 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
          "url": "https://github.com/sponsors/colinhacks"
        }
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/src/components/DetailsGrid.tsx komari-all/komari-web/src/components/DetailsGrid.tsx
---- code/komari-web/src/components/DetailsGrid.tsx	2025-11-19 15:07:44
+--- code/komari-web/src/components/DetailsGrid.tsx	2025-11-19 15:24:53
 +++ komari-all/komari-web/src/components/DetailsGrid.tsx	2025-11-19 15:08:50
 @@ -5,6 +5,7 @@
  import { formatUptime } from "./Node";
@@ -232,7 +232,7 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
              <Text size="2" weight="bold" wrap="nowrap">
                {t("nodeCard.last_updated")}
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/src/components/Node.tsx komari-all/komari-web/src/components/Node.tsx
---- code/komari-web/src/components/Node.tsx	2025-11-19 15:07:44
+--- code/komari-web/src/components/Node.tsx	2025-11-19 15:24:53
 +++ komari-all/komari-web/src/components/Node.tsx	2025-11-19 15:08:50
 @@ -214,6 +214,26 @@
                ↑ {uploadSpeed}/s ↓ {downloadSpeed}/s
@@ -262,7 +262,7 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
              <Text size="2">{t("nodeCard.totalTraffic")}</Text>
              <Flex direction="column">
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/src/components/admin/AdminPanelBar.tsx komari-all/komari-web/src/components/admin/AdminPanelBar.tsx
---- code/komari-web/src/components/admin/AdminPanelBar.tsx	2025-11-19 15:07:44
+--- code/komari-web/src/components/admin/AdminPanelBar.tsx	2025-11-19 15:24:53
 +++ komari-all/komari-web/src/components/admin/AdminPanelBar.tsx	2025-11-19 15:08:50
 @@ -159,7 +159,7 @@
      async function loadReleases() {
@@ -274,7 +274,7 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
              headers: {
                Accept: "application/vnd.github+json",
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/src/components/admin/NodeTable/NodeFunction.tsx komari-all/komari-web/src/components/admin/NodeTable/NodeFunction.tsx
---- code/komari-web/src/components/admin/NodeTable/NodeFunction.tsx	2025-11-19 15:07:44
+--- code/komari-web/src/components/admin/NodeTable/NodeFunction.tsx	2025-11-19 15:24:53
 +++ komari-all/komari-web/src/components/admin/NodeTable/NodeFunction.tsx	2025-11-19 15:08:50
 @@ -83,13 +83,13 @@
      switch (selectedPlatform) {
@@ -302,7 +302,7 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
          break;
      }
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/src/contexts/NodeListContext.tsx komari-all/komari-web/src/contexts/NodeListContext.tsx
---- code/komari-web/src/contexts/NodeListContext.tsx	2025-11-19 15:07:44
+--- code/komari-web/src/contexts/NodeListContext.tsx	2025-11-19 15:24:53
 +++ komari-all/komari-web/src/contexts/NodeListContext.tsx	2025-11-19 15:08:50
 @@ -53,6 +53,7 @@
    updated_at: string;
@@ -348,7 +348,7 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
          setNodeList([]);
        })
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/src/pages/admin/about.tsx komari-all/komari-web/src/pages/admin/about.tsx
---- code/komari-web/src/pages/admin/about.tsx	2025-11-19 15:07:44
+--- code/komari-web/src/pages/admin/about.tsx	2025-11-19 15:24:53
 +++ komari-all/komari-web/src/pages/admin/about.tsx	2025-11-19 15:08:50
 @@ -15,7 +15,7 @@
    const [view, setView] = useState("open_source");
@@ -369,7 +369,7 @@ diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Na
                    rel="noreferrer"
                    className="flex flex-row gap-2 text-sm items-center"
 diff --exclude=readme.* --exclude=README.* --exclude=LICENSE --exclude=.git* -Naurw code/komari-web/src/pages/admin/index.tsx komari-all/komari-web/src/pages/admin/index.tsx
---- code/komari-web/src/pages/admin/index.tsx	2025-11-19 15:07:44
+--- code/komari-web/src/pages/admin/index.tsx	2025-11-19 15:24:53
 +++ komari-all/komari-web/src/pages/admin/index.tsx	2025-11-19 15:08:50
 @@ -265,29 +265,38 @@
                </IconButton>
