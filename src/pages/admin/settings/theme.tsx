@@ -9,6 +9,9 @@ import {
   Dialog,
   Badge,
   IconButton,
+  TextField,
+  Callout,
+  Separator,
 } from "@radix-ui/themes";
 import { useState, useEffect } from "react";
 import {
@@ -17,6 +20,10 @@ import {
   Image as ImageIcon,
   RefreshCw,
   SquareArrowOutUpRight,
+  Download,
+  Search,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -56,6 +63,15 @@ const ThemePage = () => {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [themeToUpdate, setThemeToUpdate] = useState<Theme | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importChecking, setImportChecking] = useState(false);
+  const [importInstalling, setImportInstalling] = useState(false);
+  const [importPreview, setImportPreview] = useState<{
+    theme: Omit<Theme, "id" | "active" | "createdAt">;
+    exists: boolean;
+  } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const {
     settings,
     loading: settingsLoading,
@@ -71,19 +87,27 @@ const ThemePage = () => {
     let cancelled = false;
     async function check() {
       const themeShort = currentTheme || publicInfo?.theme;
-      if (!themeShort || themeShort === "default") {
+      if (!themeShort) {
         setActiveThemeHasConfig(false);
         return;
       }
       try {
         // 强制不缓存
-        const resp = await fetch(`/themes/${themeShort}/komari-theme.json`, { cache: "no-cache" });
+        const resp = await fetch(`/themes/${themeShort}/komari-theme.json`, {
+          cache: "no-cache",
+        });
         if (!resp.ok) {
           setActiveThemeHasConfig(false);
           return;
         }
         const data = await resp.json().catch(() => null);
-        if (!cancelled && data && data.configuration && Array.isArray(data.configuration.data) && data.configuration.data.length > 0) {
+        if (
+          !cancelled &&
+          data &&
+          data.configuration &&
+          Array.isArray(data.configuration.data) &&
+          data.configuration.data.length > 0
+        ) {
           setActiveThemeHasConfig(true);
         } else if (!cancelled) {
           setActiveThemeHasConfig(false);
@@ -93,7 +117,9 @@ const ThemePage = () => {
       }
     }
     check();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [currentTheme, publicInfo?.theme]);
 
   const loading = themesLoading || settingsLoading || !currentTheme;
@@ -106,24 +132,6 @@ const ThemePage = () => {
       }
       const data = await response.json();
       const themeList = data.data || [];
-
-      // 确保始终有默认主题
-      let hasDefaultTheme = themeList.some(
-        (theme: Theme) => theme.short === "default"
-      );
-      if (!hasDefaultTheme) {
-        themeList.unshift({
-          id: "default",
-          name: t("theme.default_theme"),
-          short: "default",
-          description: t("theme.default_description"),
-          author: "Akizon77",
-          version: "1.0.0",
-          preview: "/assets/edit_117847723_p0.png",
-          active: currentTheme === "default",
-          createdAt: new Date().toISOString(),
-        });
-      }
 
       // 根据 settings 中的 theme 设置活跃状态
       const updatedThemes = themeList.map((theme: Theme) => ({
@@ -193,7 +201,7 @@ const ThemePage = () => {
             toast.error(
               t("theme.upload_failed") +
                 ": " +
-                (err instanceof Error ? err.message : "Unknown error")
+                (err instanceof Error ? err.message : "Unknown error"),
             );
             reject(err);
           }
@@ -252,7 +260,7 @@ const ThemePage = () => {
         prevThemes.map((theme) => ({
           ...theme,
           active: theme.short === themeShort,
-        }))
+        })),
       );
 
       const theme = themes.find((t) => t.short === themeShort);
@@ -266,7 +274,7 @@ const ThemePage = () => {
       toast.error(
         t("theme.set_failed") +
           ": " +
-          (err instanceof Error ? err.message : "Unknown error")
+          (err instanceof Error ? err.message : "Unknown error"),
       );
     } finally {
       setSettingTheme(null);
@@ -303,7 +311,7 @@ const ThemePage = () => {
       toast.error(
         t("theme.update_failed") +
           ": " +
-          (err instanceof Error ? err.message : "Unknown error")
+          (err instanceof Error ? err.message : "Unknown error"),
       );
     } finally {
       setUpdating(false);
@@ -342,8 +350,65 @@ const ThemePage = () => {
       toast.error(
         t("theme.delete_failed") +
           ": " +
-          (err instanceof Error ? err.message : "Unknown error")
+          (err instanceof Error ? err.message : "Unknown error"),
       );
+    }
+  };
+
+  // 预览导入主题
+  const previewImportTheme = async () => {
+    if (!importUrl.trim()) return;
+    setImportChecking(true);
+    setImportPreview(null);
+    setImportError(null);
+    try {
+      const response = await fetch("/api/admin/theme/import?preview=true", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: importUrl.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.status === "error") {
+        setImportError(data.message || t("theme.import_failed"));
+        return;
+      }
+      setImportPreview(data.data);
+    } catch (err) {
+      setImportError(
+        err instanceof Error ? err.message : t("theme.import_failed"),
+      );
+    } finally {
+      setImportChecking(false);
+    }
+  };
+
+  // 确认导入主题
+  const confirmImportTheme = async () => {
+    if (!importUrl.trim()) return;
+    setImportInstalling(true);
+    try {
+      const response = await fetch("/api/admin/theme/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: importUrl.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.status === "error") {
+        toast.error(data.message || t("theme.import_failed"));
+        return;
+      }
+      toast.success(data.message || t("theme.import_success"));
+      setImportDialogOpen(false);
+      setImportUrl("");
+      setImportPreview(null);
+      setImportError(null);
+      await fetchThemes();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : t("theme.import_failed"),
+      );
+    } finally {
+      setImportInstalling(false);
     }
   };
 
@@ -358,7 +423,7 @@ const ThemePage = () => {
         prevThemes.map((theme) => ({
           ...theme,
           active: theme.short === currentTheme,
-        }))
+        })),
       );
     }
   }, [currentTheme, settingsLoading, themes.length]);
@@ -392,6 +457,19 @@ const ThemePage = () => {
             <Upload size={16} />
             {t("theme.upload")}
           </Button>
+          <Button
+            variant="soft"
+            onClick={() => {
+              setImportDialogOpen(true);
+              setImportUrl("");
+              setImportPreview(null);
+              setImportError(null);
+            }}
+            className="gap-2"
+          >
+            <Download size={16} />
+            {t("theme.import")}
+          </Button>
         </Flex>
       </Flex>
 
@@ -422,17 +500,13 @@ const ThemePage = () => {
               >
                 {theme.preview ? (
                   <img
-                    src={
-                      theme.short === "default"
-                        ? "/assets/edit_117847723_p0.png"
-                        : `/themes/${theme.short}/${theme.preview}`
-                    }
+                    src={`/themes/${theme.short}/${theme.preview}`}
                     alt={theme.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
                       e.currentTarget.nextElementSibling?.classList.remove(
-                        "hidden"
+                        "hidden",
                       );
                     }}
                   />
@@ -440,9 +514,7 @@ const ThemePage = () => {
                 <Flex
                   align="center"
                   justify="center"
-                  className={`w-full h-full ${
-                    theme.preview && theme.short !== "default" ? "hidden" : ""
-                  }`}
+                  className={`w-full h-full ${theme.preview ? "hidden" : ""}`}
                 >
                   <ImageIcon size={48} className="text-gray-400" />
                 </Flex>
@@ -531,15 +603,9 @@ const ThemePage = () => {
 
           <Box className="space-y-4 mt-4">
             <Box className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative">
-              {selectedTheme?.preview && selectedTheme.short !== "default" ? (
+              {selectedTheme?.preview ? (
                 <img
                   src={`/themes/${selectedTheme.short}/${selectedTheme.preview}`}
-                  alt={selectedTheme.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : selectedTheme?.short === "default" ? (
-                <img
-                  src={`/assets/edit_117847723_p0.png`}
                   alt={selectedTheme.name}
                   className="w-full h-full object-cover"
                 />
@@ -702,6 +768,143 @@ const ThemePage = () => {
               ) : null}
               {t("theme.update")}
             </Button>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
+
+      {/* 导入主题对话框 */}
+      <Dialog.Root
+        open={importDialogOpen}
+        onOpenChange={(open) => {
+          setImportDialogOpen(open);
+          if (!open) {
+            setImportUrl("");
+            setImportPreview(null);
+            setImportError(null);
+          }
+        }}
+      >
+        <Dialog.Content maxWidth="520px">
+          <Dialog.Title>{t("theme.import_title")}</Dialog.Title>
+          <Dialog.Description>
+            {t("theme.import_description")}
+          </Dialog.Description>
+
+          <Box className="space-y-4 mt-4">
+            <Flex gap="2">
+              <Box className="flex-1">
+                <TextField.Root
+                  placeholder="https://github.com/owner/repo"
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !importChecking) {
+                      previewImportTheme();
+                    }
+                  }}
+                  disabled={importChecking || importInstalling}
+                />
+              </Box>
+              <Button
+                onClick={previewImportTheme}
+                disabled={
+                  !importUrl.trim() || importChecking || importInstalling
+                }
+                className="gap-2"
+              >
+                {importChecking ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Search size={16} />
+                )}
+                {t("theme.import_check")}
+              </Button>
+            </Flex>
+
+            {importError && (
+              <Callout.Root color="red" size="1">
+                <Callout.Icon>
+                  <AlertTriangle size={16} />
+                </Callout.Icon>
+                <Callout.Text>{importError}</Callout.Text>
+              </Callout.Root>
+            )}
+
+            {importPreview && (
+              <Box>
+                <Separator size="4" className="my-3" />
+                <Card className="p-4">
+                  <Flex direction="column" gap="2">
+                    <Flex gap="2" align="center">
+                      <Text size="2" weight="bold" color="gray" wrap="nowrap">
+                        {t("theme.name")}
+                      </Text>
+                      <Text size="3" weight="bold">
+                        {importPreview.theme.name}
+                      </Text>
+                    </Flex>
+                    <Flex gap="2" align="center">
+                      <Text size="2" weight="bold" color="gray" wrap="nowrap">
+                        {t("theme.version")}
+                      </Text>
+                      <Text size="3">{importPreview.theme.version}</Text>
+                    </Flex>
+                    <Flex gap="2" align="center">
+                      <Text size="2" weight="bold" color="gray" wrap="nowrap">
+                        {t("theme.author")}
+                      </Text>
+                      <Text size="3">{importPreview.theme.author}</Text>
+                    </Flex>
+                    {importPreview.theme.description && (
+                      <Flex gap="2" align="center">
+                        <Text
+                          size="2"
+                          weight="bold"
+                          color="gray"
+                          wrap="nowrap"
+                        >
+                          {t("theme.description")}
+                        </Text>
+                        <Text size="3">
+                          {importPreview.theme.description}
+                        </Text>
+                      </Flex>
+                    )}
+                  </Flex>
+
+                  {importPreview.exists && (
+                    <Callout.Root color="orange" size="1" className="mt-3">
+                      <Callout.Icon>
+                        <AlertTriangle size={16} />
+                      </Callout.Icon>
+                      <Callout.Text>
+                        {t("theme.import_exists_warning")}
+                      </Callout.Text>
+                    </Callout.Root>
+                  )}
+                </Card>
+              </Box>
+            )}
+          </Box>
+
+          <Flex gap="3" mt="4" justify="end">
+            <Dialog.Close>
+              <Button variant="soft" color="gray">
+                {t("common.cancel")}
+              </Button>
+            </Dialog.Close>
+            {importPreview && (
+              <Button
+                onClick={confirmImportTheme}
+                disabled={importInstalling}
+                className="gap-2"
+              >
+                {importInstalling && (
+                  <Loader2 size={16} className="animate-spin" />
+                )}
+                {t("theme.import_confirm")}
+              </Button>
+            )}
           </Flex>
         </Dialog.Content>
       </Dialog.Root>

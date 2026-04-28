@@ -6,16 +6,58 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vite.dev/config/
-import type { UserConfig } from "vite";
+import type { Plugin, UserConfig } from "vite";
 import * as fs from "fs";
 import * as path from "path";
 import dotenv from "dotenv";
 
+function localKomariThemePlugin(): Plugin {
+  const themeRequestPath = "/themes/default/komari-theme.json";
+  const localThemeFile = path.resolve(__dirname, "komari-theme.json");
+
+  return {
+    name: "local-komari-theme",
+    apply: "serve",
+    enforce: "pre",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url) return next();
+
+        const url = new URL(req.url, "http://localhost");
+        if (!url.pathname.endsWith(themeRequestPath)) return next();
+
+        fs.readFile(localThemeFile, (err, data) => {
+          if (err) {
+            res.statusCode = 404;
+            res.setHeader("Content-Type", "application/json; charset=utf-8");
+            res.end(
+              JSON.stringify({
+                error: "Local theme file not found",
+                file: localThemeFile,
+              })
+            );
+            return;
+          }
+
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.setHeader("Cache-Control", "no-store");
+          res.end(data);
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const buildTime = new Date().toISOString();
 
+  // Supports configuring BASE_URL via environment variables, defaulting to the root path.
+  const base: string = process.env.VITE_BASE_URL ? process.env.VITE_BASE_URL : '/';
   const baseConfig: UserConfig = {
+    base: base,
     plugins: [
+      localKomariThemePlugin(),
       react(),
       tailwindcss(),
       Pages({
@@ -32,17 +74,17 @@ export default defineConfig(({ mode }) => {
           theme_color: "#2563eb",
           background_color: "#ffffff",
           display: "standalone",
-          scope: "/",
-          start_url: "/",
+          scope: base,
+          start_url: base,
           icons: [
             {
-              src: "/assets/pwa-icon.png",
+              src: "${base}assets/pwa-icon.png",
               sizes: "192x192",
               type: "image/png",
               purpose: "maskable any",
             },
             {
-              src: "/assets/pwa-icon.png",
+              src: "${base}assets/pwa-icon.png",
               sizes: "512x512",
               type: "image/png",
               purpose: "maskable any",

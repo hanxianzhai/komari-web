@@ -27,12 +27,12 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({ nodes, liveData }) => {
   const [t] = useTranslation();
   const [viewMode, setViewMode] = useLocalStorage<ViewMode>(
     "nodeViewMode",
-    "grid"
+    "grid",
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroup, setSelectedGroup] = useLocalStorage<string>(
     "nodeSelectedGroup",
-    "all"
+    "all",
   );
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -231,13 +231,13 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({ nodes, liveData }) => {
                   group: selectedGroup,
                   total: filteredNodes.length,
                   online: filteredNodes.filter((n) =>
-                    liveData?.online?.includes(n.uuid)
+                    liveData?.online?.includes(n.uuid),
                   ).length,
                   defaultValue: `${selectedGroup} 分组：共 ${
                     filteredNodes.length
                   } 个节点，${
                     filteredNodes.filter((n) =>
-                      liveData?.online?.includes(n.uuid)
+                      liveData?.online?.includes(n.uuid),
                     ).length
                   } 个在线`,
                 })}

@@ -37,9 +37,20 @@ const Index = () => {
   const InnerLayout = () => {
     const [t] = useTranslation();
     const { live_data } = useLiveData();
+    const [currentTime, setCurrentTime] = React.useState(
+      new Date().toLocaleTimeString(),
+    );
     //document.title = t("home_title");
     //#region 节点数据
     const { nodeList, isLoading, error, refresh } = useNodeList();
+
+    // 独立的时间更新定时器
+    useEffect(() => {
+      const timer = setInterval(() => {
+        setCurrentTime(new Date().toLocaleTimeString());
+      }, 1000);
+      return () => clearInterval(timer);
+    }, []);
 
     // Status cards visibility state
     const [statusCardsVisibility, setStatusCardsVisibility] = useLocalStorage(
@@ -50,7 +61,7 @@ const Index = () => {
         regionOverview: true,
         trafficOverview: true,
         networkSpeed: true,
-      }
+      },
     );
 
     // Status cards configuration
@@ -58,7 +69,7 @@ const Index = () => {
       {
         key: "currentTime",
         title: t("current_time"),
-        getValue: () => new Date().toLocaleTimeString(),
+        getValue: () => currentTime,
         visible: statusCardsVisibility.currentTime,
       },
       {
@@ -74,12 +85,15 @@ const Index = () => {
         getValue: () =>
           nodeList
             ? Object.entries(
-                nodeList.reduce((acc, item) => {
-                  if (live_data?.data.online.includes(item.uuid)) {
-                    acc[item.region] = (acc[item.region] || 0) + 1;
-                  }
-                  return acc;
-                }, {} as Record<string, number>)
+                nodeList.reduce(
+                  (acc, item) => {
+                    if (live_data?.data.online.includes(item.uuid)) {
+                      acc[item.region] = (acc[item.region] || 0) + 1;
+                    }
+                    return acc;
+                  },
+                  {} as Record<string, number>,
+                ),
               ).length
             : 0,
         visible: statusCardsVisibility.regionOverview,
@@ -97,11 +111,11 @@ const Index = () => {
             .map(([, node]) => node);
           const up = values.reduce(
             (acc, node) => acc + (node.network.totalUp || 0),
-            0
+            0,
           );
           const down = values.reduce(
             (acc, node) => acc + (node.network.totalDown || 0),
-            0
+            0,
           );
           return `↑ ${formatBytes(up)} / ↓ ${formatBytes(down)}`;
         },
@@ -120,11 +134,11 @@ const Index = () => {
             .map(([, node]) => node);
           const up = values.reduce(
             (acc, node) => acc + (node.network.up || 0),
-            0
+            0,
           );
           const down = values.reduce(
             (acc, node) => acc + (node.network.down || 0),
-            0
+            0,
           );
           return `↑ ${formatSpeed(up)} / ↓ ${formatSpeed(down)}`;
         },
@@ -145,6 +159,7 @@ const Index = () => {
     if (error) {
       return <div>Error: {error}</div>;
     }
+
     //#endregion
 
     return (
@@ -275,21 +290,23 @@ type TopCardProps = {
   description?: string;
 };
 
-const TopCard: React.FC<TopCardProps> = ({ title, value, description }) => {
-  return (
-    <div className="min-w-52 md:max-w-72 w-full">
-      <Flex direction="column" gap="1">
-        <label className="text-muted-foreground text-sm">{title}</label>
-        <label className="font-medium -mt-2 text-md">{value}</label>
-        {description && (
-          <Text size="2" color="gray">
-            {description}
-          </Text>
-        )}
-      </Flex>
-    </div>
-  );
-};
+const TopCard: React.FC<TopCardProps> = React.memo(
+  ({ title, value, description }) => {
+    return (
+      <div className="min-w-52 md:max-w-72 w-full">
+        <Flex direction="column" gap="1">
+          <label className="text-muted-foreground text-sm">{title}</label>
+          <label className="font-medium -mt-2 text-md">{value}</label>
+          {description && (
+            <Text size="2" color="gray">
+              {description}
+            </Text>
+          )}
+        </Flex>
+      </div>
+    );
+  },
+);
 
 type StatusSettingSwitchProps = {
   label: string;
@@ -297,15 +314,13 @@ type StatusSettingSwitchProps = {
   onCheckedChange: (checked: boolean) => void;
 };
 
-const StatusSettingSwitch: React.FC<StatusSettingSwitchProps> = ({
-  label,
-  checked,
-  onCheckedChange,
-}) => {
-  return (
-    <Flex justify="between" align="center">
-      <Text size="2">{label}</Text>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
-    </Flex>
-  );
-};
+const StatusSettingSwitch: React.FC<StatusSettingSwitchProps> = React.memo(
+  ({ label, checked, onCheckedChange }) => {
+    return (
+      <Flex justify="between" align="center">
+        <Text size="2">{label}</Text>
+        <Switch checked={checked} onCheckedChange={onCheckedChange} />
+      </Flex>
+    );
+  },
+);

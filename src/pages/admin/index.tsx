@@ -95,12 +95,12 @@ const Layout = () => {
         )
         .sort((a, b) => a.weight - b.weight)
     : [];
-  
+
   useEffect(() => {
     const interval = setInterval(() => { refresh() }, 5000);
     return () => clearInterval(interval);
   }, [nodeDetail]);
-  
+
   if (isLoading) return <Loading text="" />;
   if (error) return <div>{error}</div>;
 
@@ -292,6 +292,22 @@ const SortableRow = ({
       <TableCell>
         <Text
           size="2"
+          title={node.group}
+          style={{
+            maxWidth: "150px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {node.group && node.group.length > 10
+            ? `${node.group.slice(0, 10)}...`
+            : node.group}
+        </Text>
+      </TableCell>
+      <TableCell>
+        <Text
+          size="2"
           title={node.remark}
           style={{
             maxWidth: "150px",
@@ -436,6 +452,7 @@ const NodeTable = ({
               <TableHead>{t("admin.nodeTable.name")}</TableHead>
               <TableHead>{t("admin.nodeTable.ipAddress")}</TableHead>
               <TableHead>{t("admin.nodeTable.clientVersion")}</TableHead>
+              <TableHead>{t("common.group")}</TableHead>
               <TableHead>{t("admin.nodeEdit.remark")}</TableHead>
               <TableHead>{t("admin.nodeTable.billing")}</TableHead>
               <TableHead></TableHead>
@@ -537,12 +554,15 @@ type InstallOptions = {
   disableAutoUpdate: boolean;
   ignoreUnsafeCert: boolean;
   memoryIncludeCache: boolean;
+  getIpAddrFromNic: boolean;
+  enableGpu: boolean;
   ghproxy: string;
   dir: string;
   serviceName: string;
   includeNics: string;
   excludeNics: string;
   includeMountpoints: string;
+  interval: string;
   monthRotate: string;
 };
 function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings: any }) {
@@ -553,12 +573,15 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
     disableAutoUpdate: false,
     ignoreUnsafeCert: false,
     memoryIncludeCache: false,
+    getIpAddrFromNic: false,
+    enableGpu: false,
     ghproxy: "",
     dir: "",
     serviceName: "",
     includeNics: "",
     excludeNics: "",
     includeMountpoints: "",
+    interval: "",
     monthRotate: "",
   });
 
@@ -570,6 +593,7 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
   const [enableExcludeNics, setEnableExcludeNics] = React.useState(false);
   const [enableIncludeMountpoints, setEnableIncludeMountpoints] =
     React.useState(false);
+  const [enableInterval, setEnableInterval] = React.useState(false);
   const [enableMonthRotate, setEnableMonthRotate] = React.useState(false);
 
   const generateCommand = () => {
@@ -596,6 +620,12 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
     }
     if (installOptions.memoryIncludeCache) {
       args.push("--memory-include-cache");
+    }
+    if (installOptions.getIpAddrFromNic) {
+      args.push("--get-ip-addr-from-nic");
+    }
+    if (installOptions.enableGpu) {
+      args.push("--gpu");
     }
     if (enableGhproxy && installOptions.ghproxy) {
       const finalUrl = (
@@ -626,6 +656,11 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
       args.push(`--include-mountpoint`);
       args.push(installOptions.includeMountpoints);
     }
+    if (enableInterval) {
+      const intervalVal = Number.parseFloat((installOptions.interval || "").trim());
+      args.push("-i");
+      args.push(Number.isFinite(intervalVal) && intervalVal > 0 ? String(intervalVal) : "1");
+    }
     if (enableMonthRotate) {
       const rotateVal = (installOptions.monthRotate || "").trim() || "1"; // 默认 1
       args.push(`--month-rotate`);
@@ -653,7 +688,7 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
     let finalCommand = "";
     switch (selectedPlatform) {
       case "linux":
-        finalCommand = `bash <(curl -sL ${scriptUrl}) ` + args.join(" ");
+        finalCommand = `wget -qO- ${scriptUrl} | sudo bash -s -- ` + args.join(" ");
         break;
       case "windows":
         finalCommand =
@@ -800,6 +835,50 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
                 <Tips size="14">
                   {t("admin.nodeTable.memoryModeAvailable_tip")}
                 </Tips>
+              </Flex>
+              <Flex gap="2" align="center">
+                <Checkbox
+                  checked={installOptions.getIpAddrFromNic}
+                  onCheckedChange={(checked) => {
+                    setInstallOptions((prev) => ({
+                      ...prev,
+                      getIpAddrFromNic: Boolean(checked),
+                    }));
+                  }}
+                />
+                <label
+                  className="text-sm font-normal"
+                  onClick={() => {
+                    setInstallOptions((prev) => ({
+                      ...prev,
+                      getIpAddrFromNic: !prev.getIpAddrFromNic,
+                    }));
+                  }}
+                >
+                  {t("admin.nodeTable.getIpAddrFromNic", "从网卡获取 IP 地址")}
+                </label>
+              </Flex>
+              <Flex gap="2" align="center">
+                <Checkbox
+                  checked={installOptions.enableGpu}
+                  onCheckedChange={(checked) => {
+                    setInstallOptions((prev) => ({
+                      ...prev,
+                      enableGpu: Boolean(checked),
+                    }));
+                  }}
+                />
+                <label
+                  className="text-sm font-normal"
+                  onClick={() => {
+                    setInstallOptions((prev) => ({
+                      ...prev,
+                      enableGpu: !prev.enableGpu,
+                    }));
+                  }}
+                >
+                  {t("admin.nodeTable.enableGpuMonitoring", "启用详细 GPU 监控")}
+                </label>
               </Flex>
             </div>
             <Flex direction="column" gap="2">
@@ -1059,6 +1138,61 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
                     setInstallOptions((prev) => ({
                       ...prev,
                       includeMountpoints: e.target.value,
+                    }))
+                  }
+                />
+              )}
+              <Flex gap="2" align="center">
+                <Checkbox
+                  checked={enableInterval}
+                  onCheckedChange={(checked) => {
+                    const enabled = Boolean(checked);
+                    setEnableInterval(enabled);
+                    if (!enabled) {
+                      setInstallOptions((prev) => ({
+                        ...prev,
+                        interval: "",
+                      }));
+                    } else {
+                      setInstallOptions((prev) => ({
+                        ...prev,
+                        interval: prev.interval?.trim() ? prev.interval : "1",
+                      }));
+                    }
+                  }}
+                />
+                <label
+                  className="text-sm font-bold cursor-pointer"
+                  onClick={() => {
+                    const willEnable = !enableInterval;
+                    setEnableInterval(willEnable);
+                    if (!willEnable) {
+                      setInstallOptions((prev) => ({
+                        ...prev,
+                        interval: "",
+                      }));
+                    } else {
+                      setInstallOptions((prev) => ({
+                        ...prev,
+                        interval: prev.interval?.trim() ? prev.interval : "1",
+                      }));
+                    }
+                  }}
+                >
+                  {t("admin.nodeTable.interval", "采集间隔(秒)")}
+                </label>
+              </Flex>
+              {enableInterval && (
+                <TextField.Root
+                  placeholder="1"
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={installOptions.interval}
+                  onChange={(e) =>
+                    setInstallOptions((prev) => ({
+                      ...prev,
+                      interval: e.target.value,
                     }))
                   }
                 />
@@ -1606,9 +1740,9 @@ function BillingButton({ node }: { node: NodeDetail }) {
       setSaving(true);
       const formData = new FormData(e.target as HTMLFormElement);
       const priceValue = (formData.get("price") as string) || "0";
-      
+
       const price = parseFloat(priceValue);
-      
+
       if (isNaN(price) || (price < 0 && price !== -1)) {
         toast.error(t("admin.nodeTable.invalidPrice"));
         return;
